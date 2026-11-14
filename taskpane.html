@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Court Brief & Annexure Builder — MS Word</title>
+
+  <!-- Microsoft Office JavaScript API (Mac & Windows) -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
+
+  <!-- Local In-Browser PDF-Lib Engine (Handles large local PDFs natively in RAM) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #2b579a;
+      --primary-hover: #1e3f73;
+      --primary-light: #edf3fb;
+      --accent-green: #107c41;
+      --accent-green-hover: #0b5a2f;
+      --surface: #ffffff;
+      --bg: #f6f8fb;
+      --border: #e1e6ef;
+      --text-main: #1f2430;
+      --text-muted: #5c6577;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --shadow-sm: 0 2px 6px rgba(24, 39, 75, 0.05);
+      --shadow-md: 0 6px 16px rgba(24, 39, 75, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      margin: 0;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 2px;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 14.5px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-pill {
+      font-size: 9.5px;
+      font-weight: 700;
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 2px 7px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 13px;
+      margin-bottom: 11px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #364156;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 9px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-group {
+      margin-bottom: 8px;
+    }
+
+    label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #4a5365;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1.2px solid #d5dce8;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-main);
+      background: #fafbfd;
+      outline: none;
+      transition: all 0.18s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(43, 87, 154, 0.14);
+    }
+
+    .drop-zone {
+      border: 1.8px dashed #b4c4de;
+      background: #f4f7fc;
+      border-radius: var(--radius-sm);
+      padding: 14px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--primary);
+      background: #e9f0fb;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .row > div {
+      flex: 1;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 11px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: #3a4354;
+      border: 1.2px solid #d5dce8;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #f2f5fa;
+      border-color: #b8c4d8;
+      color: var(--primary);
+    }
+
+    .btn-compile {
+      background: var(--accent-green);
+      box-shadow: 0 4px 12px rgba(16, 124, 65, 0.22);
+    }
+
+    .btn-compile:hover:not(:disabled) {
+      background: var(--accent-green-hover);
+    }
+
+    .btn-danger {
+      background: #fff;
+      color: #c62828;
+      border: 1.2px solid #f5c6cb;
+    }
+
+    .btn-danger:hover {
+      background: #fff1f2;
+    }
+
+    .annexure-item {
+      background: #ffffff;
+      border: 1.2px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 9px 11px;
+      margin: 7px 0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mark-badge {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid #c7d9f5;
+    }
+
+    .annexure-actions {
+      margin-top: 7px;
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .annexure-actions button {
+      padding: 4px 7px;
+      font-size: 10.5px;
+      border-radius: 6px;
+    }
+
+    .status-box {
+      margin-top: 10px;
+      padding: 10px 11px;
+      border-radius: var(--radius-sm);
+      background: #edf3fb;
+      border: 1px solid #c3d7f4;
+      color: #1a3668;
+      font-size: 11.5px;
+      display: none;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .pill-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="app-header">
+    <div class="brand-title">
+      <span>⚖️ Brief Builder</span>
+      <span class="brand-pill" id="platformBadge">Standalone</span>
+    </div>
+    <div style="display:flex; gap:5px;">
+      <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 10.5px;" onclick="saveStateToWordDoc(true)" title="Embed settings directly into this .docx file">
+        💾 Save to Doc
+      </button>
+    </div>
+  </div>
+
+  <!-- 1. MAIN DRAFT PDF -->
+  <div class="card">
+    <div class="section-title">
+      <span>1. Main Petition / Draft PDF</span>
+      <span style="font-size:10px; color:var(--text-muted); font-weight:normal;">Step 1</span>
+    </div>
+    <div style="font-size:11px; color:var(--text-muted); margin-bottom:7px;">
+      Save your Word document as PDF (<em>File → Save As → PDF</em>) and select it here:
+    </div>
+    <input type="file" id="mainDraftInput" accept="application/pdf" style="display:none;" onchange="handleMainDraftSelected(event)" />
+    <div style="display:flex; gap:6px; align-items:center;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('mainDraftInput').click()">
+        📄 Select Main Draft PDF...
+      </button>
+    </div>
+    <div id="mainDraftBadge" class="pill-badge" style="background:#f0f3f8; color:#556075; display:block; margin-top:6px; padding:5px 8px;">
+      No Main Draft PDF loaded yet.
+    </div>
+  </div>
+
+  <!-- 2. LOCAL ANNEXURE PDF SELECTOR -->
+  <div class="card">
+    <div class="section-title" id="formTitle">2. Add Local Annexure PDFs</div>
+    <input type="hidden" id="editItemIndex" value="-1" />
+
+    <input type="file" id="localPdfPicker" accept="application/pdf" multiple style="display:none;" onchange="handleLocalFilesSelected(event)" />
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('localPdfPicker').click()">
+      <div style="font-weight:700; color:var(--primary); font-size:12px;">📁 Click to Browse Local PDFs (or Drag & Drop)</div>
+      <div style="font-size:10.5px; color:var(--text-muted); margin-top:3px;">Select one or multiple PDF exhibits from your Mac/PC</div>
+    </div>
+
+    <div id="pendingFileSection" style="display:none; margin-top:9px; padding-top:8px; border-top:1px dashed #dce3ef;">
+      <div class="form-group">
+        <label>Exhibit Description / Title:</label>
+        <input type="text" id="fileTitleInput" placeholder="e.g. Agreement dated 12.04.2024" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Custom Override (Optional):</label>
+          <input type="text" id="customPrefix" placeholder="Auto" />
+        </div>
+      </div>
+
+      <div style="display:flex; gap:6px; margin-top:8px;">
+        <button class="btn" style="flex:1;" id="saveBtn" onclick="saveEditedAnnexure()">Save Changes</button>
+        <button class="btn btn-secondary" id="cancelEditBtn" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:9px;">
+      <div>
+        <label>Sequential Numbering Scheme:</label>
+        <select id="schemeSelect" onchange="renderList(); saveStateToWordDoc(false);">
+          <option value="alpha">Alphabet (A, B, C...)</option>
+          <option value="numeric">Numbers (1, 2, 3...)</option>
+          <option value="p-seq">Court Standard (P-1, P-2, P-3...)</option>
+          <option value="annexure-alpha">Annexure A, Annexure B...</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANNEXURE LIST -->
+  <div id="annexureListContainer"></div>
+
+  <!-- 3. ANNEXURE MARK PLACEMENT -->
+  <div class="card">
+    <div class="section-title">3. Annexure Mark Placement</div>
+    <div class="row">
+      <div>
+        <label>Placement:</label>
+        <select id="markPosition" onchange="saveStateToWordDoc(false)">
+          <option value="top-right" selected>Header Right</option>
+          <option value="top-center">Header Center</option>
+          <option value="top-left">Header Left</option>
+          <option value="bottom-right">Footer Right</option>
+          <option value="bottom-center">Footer Center</option>
+          <option value="bottom-left">Footer Left</option>
+        </select>
+      </div>
+      <div>
+        <label>Font Size (pt):</label>
+        <input type="number" id="markFontSize" value="12" min="8" max="26" onchange="saveStateToWordDoc(false)" />
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:6px;">
+      <div>
+        <label>Display Format:</label>
+        <select id="markDisplayFormat" onchange="saveStateToWordDoc(false)">
+          <option value="bare">Bare Mark ("A")</option>
+          <option value="bracket">Brackets ("[A]")</option>
+          <option value="prefix" selected>Prefix ("ANNEXURE - A")</option>
+          <option value="exhibit">Exhibit ("EXHIBIT - A")</option>
+        </select>
+      </div>
+      <div>
+        <label>Margin Band (pt):</label>
+        <input type="number" id="safeMargin" value="38" min="24" max="72" onchange="saveStateToWordDoc(false)" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. CONTINUOUS PAGINATION SETTINGS -->
+  <div class="card">
+    <div class="section-title">4. Continuous Pagination Settings</div>
+    <div class="row">
+      <div>
+        <label>Page Number Location:</label>
+        <select id="pagePosition" onchange="saveStateToWordDoc(false)">
+          <optgroup label="Top Header Margin (Recommended)">
+            <option value="top-right" selected>Header Right (Top-Right)</option>
+            <option value="top-center">Header Center (Top-Center)</option>
+            <option value="top-left">Header Left (Top-Left)</option>
+          </optgroup>
+          <optgroup label="Bottom Footer Margin">
+            <option value="bottom-center">Footer Center</option>
+            <option value="bottom-right">Footer Right</option>
+            <option value="bottom-left">Footer Left</option>
+          </optgroup>
+        </select>
+      </div>
+      <div>
+        <label>Font Size (pt):</label>
+        <input type="number" id="pageFontSize" value="10" min="7" max="18" onchange="saveStateToWordDoc(false)" />
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:6px;">
+      <label>Numbering Format:</label>
+      <select id="pageFormat" onchange="saveStateToWordDoc(false)">
+        <option value="page-only" selected>"Page 14"</option>
+        <option value="num-only">"14"</option>
+        <option value="mark-page">"A | Page 14"</option>
+        <option value="bracket-num">"[ 14 ]"</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <button class="btn btn-secondary" style="width:100%; margin-bottom:7px;" onclick="syncInTextMarksInWord()">
+    🔄 Sync Marks & TOC Table in Word Doc
+  </button>
+
+  <button class="btn btn-compile" style="width:100%; padding:11px;" id="compileBtn" onclick="compileFullBriefLocal()">
+    ✨ Compile & Download Court Brief PDF
+  </button>
+
+  <div style="font-size:10px; color:#5c6577; text-align:center; margin-top:5px;">
+    ⚡ Processed 100% locally on your Mac/PC — handles large PDFs with zero upload limits.
+  </div>
+
+  <div id="statusBox" class="status-box"></div>
+
+  <script>
+    let isOfficeReady = false;
+    let mainDraftBytes = null;
+    let mainDraftFileName = "Petition_Draft.pdf";
+    let annexures = [];
+    let lastCompiledTocEntries = [];
+
+    // Initialize Microsoft Office JS Host (Word on Mac / Windows / Web)
+    if (typeof Office !== 'undefined') {
+      Office.onReady((info) => {
+        if (info && info.host === Office.HostType.Word) {
+          isOfficeReady = true;
+          const plat = info.platform === Office.PlatformType.Mac ? "Word for Mac" :
+                       info.platform === Office.PlatformType.PC ? "Word for Windows" : "MS Word";
+          document.getElementById('platformBadge').innerText = plat;
+          loadStateFromWordDoc();
+        }
+      });
+    }
+
+    window.addEventListener('load', () => {
+      renderList();
+    });
+
+    // Drag & Drop support for local PDFs
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer && e.dataTransfer.files) {
+        processAddedLocalFiles(e.dataTransfer.files);
+      }
+    });
+
+    function handleMainDraftSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        mainDraftBytes = new Uint8Array(e.target.result);
+        mainDraftFileName = file.name;
+        const badge = document.getElementById('mainDraftBadge');
+        badge.style.background = '#e6f4ea';
+        badge.style.color = '#137333';
+        badge.innerHTML = `✅ Loaded: <strong>${escapeHtml(file.name)}</strong> (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        showStatus(`Main Draft "${escapeHtml(file.name)}" ready for compilation.`);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function handleLocalFilesSelected(event) {
+      if (event.target.files) {
+        processAddedLocalFiles(event.target.files);
+      }
+      event.target.value = '';
+    }
+
+    function processAddedLocalFiles(fileList) {
+      const pdfFiles = Array.from(fileList).filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+      if (pdfFiles.length === 0) {
+        showStatus('⚠️ Please select valid PDF files.');
+        return;
+      }
+
+      let loadedCount = 0;
+      pdfFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const bytes = new Uint8Array(e.target.result);
+          const id = 'A_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+          const cleanTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]+/g, " ");
+          annexures.push({
+            id: id,
+            fileName: file.name,
+            title: cleanTitle,
+            customPrefix: '',
+            bytes: bytes
+          });
+          loadedCount++;
+          if (loadedCount === pdfFiles.length) {
+            renderList();
+            saveStateToWordDoc(false);
+            showStatus(`✅ Added ${pdfFiles.length} local PDF exhibit(s).`);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function(m) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
+      });
+    }
+
+    // =========================================================
+    // WORD DOCUMENT PERSISTENCE (CustomXMLParts inside .docx)
+    // =========================================================
+    const XML_NAMESPACE = "http://legaltech.briefbuilder/state/v1";
+
+    function getSettingsObject() {
+      return {
+        scheme: document.getElementById('schemeSelect').value,
+        markPos: document.getElementById('markPosition').value,
+        markFontSize: document.getElementById('markFontSize').value,
+        markDisplayFormat: document.getElementById('markDisplayFormat').value,
+        safeMargin: document.getElementById('safeMargin').value,
+        pagePos: document.getElementById('pagePosition').value,
+        pageFontSize: document.getElementById('pageFontSize').value,
+        pageFormat: document.getElementById('pageFormat').value
+      };
+    }
+
+    function applySettingsObject(s) {
+      if (!s) return;
+      if (s.scheme) document.getElementById('schemeSelect').value = s.scheme;
+      if (s.markPos) document.getElementById('markPosition').value = s.markPos;
+      if (s.markFontSize) document.getElementById('markFontSize').value = s.markFontSize;
+      if (s.markDisplayFormat) document.getElementById('markDisplayFormat').value = s.markDisplayFormat;
+      if (s.safeMargin) document.getElementById('safeMargin').value = s.safeMargin;
+      if (s.pagePos) document.getElementById('pagePosition').value = s.pagePos;
+      if (s.pageFontSize) document.getElementById('pageFontSize').value = s.pageFontSize;
+      if (s.pageFormat) document.getElementById('pageFormat').value = s.pageFormat;
+    }
+
+    async function saveStateToWordDoc(verbose) {
+      if (!isOfficeReady) {
+        if (verbose) showStatus("ℹ️ Open inside Microsoft Word to embed settings directly into the .docx file.");
+        return;
+      }
+      try {
+        const metadata = annexures.map(a => ({
+          id: a.id,
+          fileName: a.fileName,
+          title: a.title,
+          customPrefix: a.customPrefix,
+          mark: a.mark
+        }));
+
+        const payload = JSON.stringify({
+          annexures: metadata,
+          settings: getSettingsObject()
+        });
+
+        await Word.run(async (context) => {
+          const customXmlParts = context.document.customXmlParts.getByNamespace(XML_NAMESPACE);
+          customXmlParts.load("items");
+          await context.sync();
+
+          for (let i = 0; i < customXmlParts.items.length; i++) {
+            customXmlParts.items[i].delete();
+          }
+
+          const escaped = payload.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          const xmlStr = `<BriefBuilderState xmlns="${XML_NAMESPACE}">${escaped}</BriefBuilderState>`;
+          context.document.customXmlParts.add(xmlStr);
+          await context.sync();
+        });
+
+        if (verbose) showStatus("✅ Settings & annexure index saved inside this Word (.docx) file.");
+      } catch (err) {
+        console.warn("Word CustomXML save notice:", err);
+      }
+    }
+
+    async function loadStateFromWordDoc() {
+      if (!isOfficeReady) return;
+      try {
+        await Word.run(async (context) => {
+          const customXmlParts = context.document.customXmlParts.getByNamespace(XML_NAMESPACE);
+          customXmlParts.load("items");
+          await context.sync();
+
+          if (customXmlParts.items.length > 0) {
+            const xmlResult = customXmlParts.items[0].getXml();
+            await context.sync();
+
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlResult.value, "text/xml");
+            const rawText = xmlDoc.documentElement.textContent;
+            if (rawText) {
+              const parsed = JSON.parse(rawText);
+              if (parsed.settings) applySettingsObject(parsed.settings);
+              if (parsed.annexures && parsed.annexures.length > 0) {
+                annexures = parsed.annexures.map(meta => ({
+                  ...meta,
+                  bytes: null
+                }));
+                renderList();
+                showStatus(`Restored ${annexures.length} saved annexure entry(s) from this Word document.`);
+              }
+            }
+          }
+        });
+      } catch (err) {
+        console.warn("Word state restore notice:", err);
+      }
+    }
+
+    // =========================================================
+    // WORD TEXT & CONTENT CONTROL INSERTION / SYNCING
+    // =========================================================
+
+    async function insertMarkInWord(id, mark) {
+      if (!isOfficeReady) {
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = mark;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        showStatus(`Copied <strong>${escapeHtml(mark)}</strong> to clipboard (Open inside MS Word to insert dynamic Content Controls).`);
+        return;
+      }
+      try {
+        await Word.run(async (context) => {
+          const range = context.document.getSelection();
+          const cc = range.insertContentControl();
+          cc.tag = `ANNEXURE_${id}`;
+          cc.title = `Annexure ${mark}`;
+          cc.insertText(mark, Word.InsertLocation.replace);
+          cc.font.bold = true;
+          await context.sync();
+        });
+        showStatus(`🏷️ Inserted dynamic mark "<strong>${escapeHtml(mark)}</strong>" at your cursor in Word.`);
+      } catch (err) {
+        showStatus("Error inserting mark: " + err.message);
+      }
+    }
+
+    async function syncInTextMarksInWord(tocRows) {
+      if (!isOfficeReady) {
+        showStatus("Open inside Microsoft Word to sync document marks & TOC.");
+        return;
+      }
+      if (annexures.length === 0) {
+        showStatus("Add at least one annexure first.");
+        return;
+      }
+      try {
+        const activeToc = (Array.isArray(tocRows) && tocRows.length > 0)
+          ? tocRows
+          : (lastCompiledTocEntries.length > 0
+              ? lastCompiledTocEntries
+              : annexures.map(a => ({ mark: a.mark, title: a.title, startPage: "TBD", endPage: "TBD" })));
+
+        await Word.run(async (context) => {
+          // 1. Update all dynamic Content Control marks
+          const controls = context.document.contentControls;
+          controls.load("items,tag");
+          await context.sync();
+
+          let updatedCount = 0;
+          for (let i = 0; i < controls.items.length; i++) {
+            const cc = controls.items[i];
+            if (cc.tag && cc.tag.startsWith("ANNEXURE_")) {
+              const annId = cc.tag.replace("ANNEXURE_", "");
+              const found = annexures.find(a => a.id === annId);
+              if (found) {
+                try {
+                  cc.insertText(found.mark, Word.InsertLocation.replace);
+                  cc.title = `Annexure ${found.mark}`;
+                  updatedCount++;
+                } catch (ccErr) {
+                  console.warn("Skipped locked content control:", ccErr);
+                }
+              }
+            }
+          }
+
+          // 2. Replace {{BRIEF_TABLE_OF_CONTENTS}} placeholder if present
+          const searchResults = context.document.body.search("{{BRIEF_TABLE_OF_CONTENTS}}", { matchCase: true });
+          searchResults.load("items");
+          await context.sync();
+
+          let tocInserted = false;
+          if (searchResults.items.length > 0 && activeToc.length > 0) {
+            const tableRows = [["Sl. No.", "Mark", "Document Description", "Page Range"]];
+            activeToc.forEach((r, idx) => {
+              const span = r.startPage === "TBD"
+                ? "Pending Compile"
+                : (r.startPage === r.endPage ? `Page ${r.startPage}` : `Pages ${r.startPage}–${r.endPage}`);
+              tableRows.push([String(idx + 1), r.mark, r.title, span]);
+            });
+
+            const targetRange = searchResults.items[0];
+            const wordTable = targetRange.insertTable(tableRows.length, 4, Word.InsertLocation.replace, tableRows);
+            wordTable.styleBuiltIn = Word.BuiltInStyleName.gridTable1Light;
+            tocInserted = true;
+          }
+
+          await context.sync();
+          const tocMsg = tocInserted ? " and populated TOC table" : "";
+          showStatus(`✅ Synced ${updatedCount} dynamic mark reference(s)${tocMsg} in your Word document.`);
+        });
+        saveStateToWordDoc(false);
+      } catch (err) {
+        showStatus("Sync failed: " + err.message);
+      }
+    }
+
+    // =========================================================
+    // LIST MANAGEMENT & UI RENDERING
+    // =========================================================
+
+    function getComputedMark(index, item) {
+      if (item.customPrefix) return item.customPrefix;
+      const scheme = document.getElementById('schemeSelect').value;
+      if (scheme === 'alpha') {
+        // Supports A-Z, then AA, AB...
+        let n = index;
+        let label = '';
+        while (n >= 0) {
+          label = String.fromCharCode((n % 26) + 65) + label;
+          n = Math.floor(n / 26) - 1;
+        }
+        return label;
+      }
+      if (scheme === 'numeric') return (index + 1).toString();
+      if (scheme === 'p-seq') return `P-${index + 1}`;
+      if (scheme === 'annexure-alpha') return `Annexure ${String.fromCharCode(65 + (index % 26))}`;
+      return (index + 1).toString();
+    }
+
+    function renderList() {
+      const container = document.getElementById('annexureListContainer');
+      container.innerHTML = '';
+
+      if (annexures.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:10px; color:var(--text-muted); font-size:11px; font-style:italic;">No local PDF annexures added yet.</div>';
+        return;
+      }
+
+      annexures.forEach((item, index) => {
+        item.previousMark = item.mark || null;
+        item.mark = getComputedMark(index, item);
+
+        const missingFileNotice = !item.bytes
+          ? `<span style="color:#c62828; font-size:10px; display:block; margin-top:2px;">⚠️ Re-select local file "${escapeHtml(item.fileName)}" before compiling</span>`
+          : `<span style="color:#137333; font-size:10px; display:block; margin-top:2px;">📎 ${escapeHtml(item.fileName)} (${(item.bytes.byteLength / 1024).toFixed(0)} KB)</span>`;
+
+        const div = document.createElement('div');
+        div.className = 'annexure-item';
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <span class="mark-badge">${escapeHtml(item.mark)}</span>
+              <strong style="margin-left:6px;">${escapeHtml(item.title)}</strong>
+              ${missingFileNotice}
+            </div>
+          </div>
+          <div class="annexure-actions">
+            <button class="btn btn-secondary" onclick="moveItem(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button>
+            <button class="btn btn-secondary" onclick="moveItem(${index}, 1)" ${index === annexures.length - 1 ? 'disabled' : ''}>▼</button>
+            <button class="btn btn-secondary" style="color:var(--primary); font-weight:600;" onclick="insertMarkInWord('${item.id}', '${escapeHtml(item.mark)}')">🏷️ Insert Mark</button>
+            <button class="btn btn-secondary" onclick="relinkSingleFile(${index})" title="Replace/attach local PDF">📂 File</button>
+            <button class="btn btn-secondary" onclick="editItem(${index})">✏️ Edit</button>
+            <button class="btn btn-danger" onclick="deleteItem(${index})">🗑️</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function relinkSingleFile(index) {
+      const picker = document.createElement('input');
+      picker.type = 'file';
+      picker.accept = 'application/pdf';
+      picker.style.display = 'none';
+      document.body.appendChild(picker);
+      picker.onchange = (e) => {
+        const f = e.target.files[0];
+        if (!f) {
+          document.body.removeChild(picker);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          annexures[index].bytes = new Uint8Array(ev.target.result);
+          annexures[index].fileName = f.name;
+          renderList();
+          saveStateToWordDoc(false);
+          showStatus(`Attached "${escapeHtml(f.name)}" to ${escapeHtml(annexures[index].mark)}.`);
+          document.body.removeChild(picker);
+        };
+        reader.readAsArrayBuffer(f);
+      };
+      picker.click();
+    }
+
+    function editItem(index) {
+      const item = annexures[index];
+      document.getElementById('pendingFileSection').style.display = 'block';
+      document.getElementById('fileTitleInput').value = item.title;
+      document.getElementById('customPrefix').value = item.customPrefix || '';
+      document.getElementById('editItemIndex').value = index;
+    }
+
+    function saveEditedAnnexure() {
+      const idx = parseInt(document.getElementById('editItemIndex').value, 10);
+      if (idx >= 0 && annexures[idx]) {
+        annexures[idx].title = document.getElementById('fileTitleInput').value.trim() || annexures[idx].title;
+        annexures[idx].customPrefix = document.getElementById('customPrefix').value.trim();
+      }
+      cancelEdit();
+      renderList();
+      saveStateToWordDoc(false);
+    }
+
+    function cancelEdit() {
+      document.getElementById('pendingFileSection').style.display = 'none';
+      document.getElementById('editItemIndex').value = '-1';
+    }
+
+    function deleteItem(index) {
+      if (annexures[index]) {
+        annexures[index].bytes = null;
+      }
+      annexures.splice(index, 1);
+      renderList();
+      saveStateToWordDoc(false);
+    }
+
+    function moveItem(index, step) {
+      const target = index + step;
+      if (target < 0 || target >= annexures.length) return;
+      const moved = annexures.splice(index, 1)[0];
+      annexures.splice(target, 0, moved);
+      renderList();
+      saveStateToWordDoc(false);
+    }
+
+    function showStatus(msg) {
+      const box = document.getElementById('statusBox');
+      box.style.display = 'block';
+      box.innerHTML = msg;
+    }
+
+    // =========================================================
+    // LOCAL NATIVE PDF COMPILER (Multi-Page TOC at Top, Padded Margins,
+    // First-Page Marks, Header Pagination, Two-Way Links, Bookmarks)
+    // =========================================================
+    async function compileFullBriefLocal() {
+      if (typeof PDFLib === 'undefined') {
+        showStatus("❌ PDF-Lib engine did not load. Please check your internet connection and reload.");
+        return;
+      }
+      if (!mainDraftBytes) {
+        showStatus("⚠️ Please select your exported <strong>Main Draft PDF</strong> in Step 1 first.");
+        return;
+      }
+      if (annexures.length === 0) {
+        showStatus("⚠️ Please add at least one local PDF annexure.");
+        return;
+      }
+      const missing = annexures.find(a => !a.bytes);
+      if (missing) {
+        showStatus(`⚠️ Missing binary PDF for <strong>${escapeHtml(missing.mark)} (${escapeHtml(missing.title)})</strong>. Click "📂 File" on that card to attach it.`);
+        return;
+      }
+
+      const btn = document.getElementById('compileBtn');
+      btn.disabled = true;
+      btn.innerText = '⏳ Compiling Court Brief...';
+      showStatus('⏳ Assembling TOC, padding white margins, stamping headers, and generating PDF bookmarks...');
+
+      try {
+        const { PDFDocument, rgb, StandardFonts, PDFName, PDFArray, PDFNumber } = PDFLib;
+
+        const compiledDoc = await PDFDocument.create();
+        const mainDoc = await PDFDocument.load(mainDraftBytes);
+        const mainIndices = mainDoc.getPageIndices();
+        const mainPages = await compiledDoc.copyPages(mainDoc, mainIndices);
+
+        const fontBold = await compiledDoc.embedFont(StandardFonts.HelveticaBold);
+        const fontRegular = await compiledDoc.embedFont(StandardFonts.Helvetica);
+
+        const settings = getSettingsObject();
+        const markFontSize = parseInt(settings.markFontSize || 12, 10);
+        const pageFontSize = parseInt(settings.pageFontSize || 10, 10);
+        const margin = parseInt(settings.safeMargin || 38, 10);
+        const markPos = settings.markPos || 'top-right';
+        const pagePos = settings.pagePos || 'top-right';
+        const markFormat = settings.markDisplayFormat || 'prefix';
+        const pageFmt = settings.pageFormat || 'page-only';
+
+        const refPage = mainPages[0] || (await compiledDoc.addPage([595.28, 841.89]));
+        const pageWidth = refPage.getWidth();
+        const pageHeight = refPage.getHeight();
+
+        // Calculate how many TOC pages are needed (approx 28 entries per page)
+        const totalTocRows = annexures.length + 1; // +1 for Main Draft
+        const rowsPerPage = Math.max(15, Math.floor((pageHeight - (2 * margin) - 95) / 20));
+        const numTocPages = Math.max(1, Math.ceil(totalTocRows / rowsPerPage));
+
+        const tocPages = [];
+        for (let t = 0; t < numTocPages; t++) {
+          tocPages.push(compiledDoc.addPage([pageWidth, pageHeight]));
+        }
+        const firstTocPage = tocPages[0];
+
+        // Pages immediately after TOC pages: Main Draft / Petition
+        const mainStartPage = numTocPages + 1;
+        const mainEndPage = mainStartPage + mainPages.length - 1;
+        for (let m = 0; m < mainPages.length; m++) {
+          compiledDoc.addPage(mainPages[m]);
+        }
+
+        let currentPageNumber = mainEndPage + 1;
+        const tocEntries = [];
+        const bookmarkItems = [];
+
+        const cleanDraftTitle = mainDraftFileName.replace(/\.[^/.]+$/, "").replace(/[_-]+/g, " ").toUpperCase() + " (MAIN DRAFT)";
+
+        bookmarkItems.push({ title: "Table of Contents", targetPageIndex: 0 });
+        bookmarkItems.push({ title: cleanDraftTitle, targetPageIndex: numTocPages });
+
+        tocEntries.push({
+          mark: "—",
+          title: cleanDraftTitle,
+          startPage: mainStartPage,
+          endPage: mainEndPage,
+          targetPageIndex: numTocPages
+        });
+
+        // Process Each Annexure with Dedicated Top & Bottom White Margin Bands
+        for (let i = 0; i < annexures.length; i++) {
+          const item = annexures[i];
+          const annexureDoc = await PDFDocument.load(item.bytes);
+          const pageIndices = annexureDoc.getPageIndices();
+          const startPage = currentPageNumber;
+          const endPage = currentPageNumber + pageIndices.length - 1;
+
+          const copiedPages = await compiledDoc.copyPages(annexureDoc, pageIndices);
+          const firstAddedPageIndex = compiledDoc.getPageCount();
+
+          bookmarkItems.push({
+            title: `${item.mark}: ${item.title}`,
+            targetPageIndex: firstAddedPageIndex
+          });
+
+          tocEntries.push({
+            mark: item.mark,
+            title: item.title,
+            startPage: startPage,
+            endPage: endPage,
+            targetPageIndex: firstAddedPageIndex
+          });
+
+          const topMarginBand = Math.max(margin, 38);
+          const bottomMarginBand = Math.max(margin, 32);
+
+          for (let pIdx = 0; pIdx < copiedPages.length; pIdx++) {
+            const page = copiedPages[pIdx];
+            compiledDoc.addPage(page);
+
+            const { width: origW, height: origH } = page.getSize();
+            const newHeight = origH + topMarginBand + bottomMarginBand;
+            page.setSize(origW, newHeight);
+
+            // Expand MediaBox & CropBox to create pure white margin bands without touching exhibit graphics
+            const newMediaBox = PDFArray.withContext(compiledDoc.context);
+            newMediaBox.push(PDFNumber.of(0));
+            newMediaBox.push(PDFNumber.of(-bottomMarginBand));
+            newMediaBox.push(PDFNumber.of(origW));
+            newMediaBox.push(PDFNumber.of(origH + topMarginBand));
+            page.node.set(PDFName.of('MediaBox'), newMediaBox);
+            page.node.set(PDFName.of('CropBox'), newMediaBox);
+
+            // Stamp Annexure Mark ONLY on Page 1 of this Exhibit
+            if (pIdx === 0) {
+              let renderedMark = item.mark;
+              if (markFormat === 'bracket') renderedMark = `[${item.mark}]`;
+              if (markFormat === 'prefix') renderedMark = `ANNEXURE - ${item.mark}`;
+              if (markFormat === 'exhibit') renderedMark = `EXHIBIT - ${item.mark}`;
+
+              const markWidth = fontBold.widthOfTextAtSize(renderedMark, markFontSize);
+              let mx = origW - margin - markWidth;
+              let my = origH + ((topMarginBand - markFontSize) / 2) - 2;
+
+              if (markPos === 'top-center') mx = (origW - markWidth) / 2;
+              else if (markPos === 'top-left') mx = margin;
+              else if (markPos === 'bottom-right') {
+                mx = origW - margin - markWidth;
+                my = -bottomMarginBand + ((bottomMarginBand - markFontSize) / 2);
+              } else if (markPos === 'bottom-center') {
+                mx = (origW - markWidth) / 2;
+                my = -bottomMarginBand + ((bottomMarginBand - markFontSize) / 2);
+              } else if (markPos === 'bottom-left') {
+                mx = margin;
+                my = -bottomMarginBand + ((bottomMarginBand - markFontSize) / 2);
+              }
+
+              page.drawText(renderedMark, {
+                x: mx,
+                y: my,
+                size: markFontSize,
+                font: fontBold,
+                color: rgb(0.08, 0.14, 0.36)
+              });
+            }
+
+            // Stamp Continuous Running Page Number (Header or Footer margin band)
+            const pageNum = startPage + pIdx;
+            let renderedPage = `Page ${pageNum}`;
+            if (pageFmt === 'num-only') renderedPage = `${pageNum}`;
+            if (pageFmt === 'mark-page') renderedPage = `${item.mark} | Page ${pageNum}`;
+            if (pageFmt === 'bracket-num') renderedPage = `[ ${pageNum} ]`;
+
+            const pageWidthText = fontRegular.widthOfTextAtSize(renderedPage, pageFontSize);
+            let px = origW - margin - pageWidthText;
+            let py = origH + ((topMarginBand - pageFontSize) / 2) - 2;
+
+            // Avoid overlapping mark if both are in the exact same corner on Page 1
+            if (pIdx === 0 && markPos === pagePos && markPos.startsWith('top-')) {
+              px = markPos === 'top-center' ? origW - margin - pageWidthText : (origW - pageWidthText) / 2;
+            } else if (pIdx === 0 && markPos === pagePos && markPos.startsWith('bottom-')) {
+              px = markPos === 'bottom-center' ? origW - margin - pageWidthText : (origW - pageWidthText) / 2;
+            }
+
+            if (pagePos === 'top-center' && !(pIdx === 0 && markPos === 'top-center')) {
+              px = (origW - pageWidthText) / 2;
+              py = origH + ((topMarginBand - pageFontSize) / 2) - 2;
+            } else if (pagePos === 'top-left' && !(pIdx === 0 && markPos === 'top-left')) {
+              px = margin;
+              py = origH + ((topMarginBand - pageFontSize) / 2) - 2;
+            } else if (pagePos === 'bottom-center') {
+              if (!(pIdx === 0 && markPos === 'bottom-center')) px = (origW - pageWidthText) / 2;
+              py = -bottomMarginBand + ((bottomMarginBand - pageFontSize) / 2) + 2;
+            } else if (pagePos === 'bottom-right') {
+              if (!(pIdx === 0 && markPos === 'bottom-right')) px = origW - margin - pageWidthText;
+              py = -bottomMarginBand + ((bottomMarginBand - pageFontSize) / 2) + 2;
+            } else if (pagePos === 'bottom-left') {
+              if (!(pIdx === 0 && markPos === 'bottom-left')) px = margin;
+              py = -bottomMarginBand + ((bottomMarginBand - pageFontSize) / 2) + 2;
+            }
+
+            page.drawText(renderedPage, {
+              x: px,
+              y: py,
+              size: pageFontSize,
+              font: fontRegular,
+              color: rgb(0.16, 0.2, 0.38)
+            });
+
+            // Clickable Link returning straight back to TOC on Page 1
+            createPdfLink(compiledDoc, page, [px - 4, py - 3, px + pageWidthText + 4, py + pageFontSize + 3], firstTocPage.ref);
+          }
+
+          currentPageNumber += pageIndices.length;
+        }
+
+        // Render Multi-Page Table of Contents at the Top with clickable jump links
+        renderMultiPageToc(compiledDoc, tocPages, tocEntries, rowsPerPage, fontBold, fontRegular, margin);
+
+        // Build Native PDF Bookmarks / Outlines Tree
+        buildPdfOutlines(compiledDoc, bookmarkItems);
+
+        // Cache exact TOC page numbers and sync Word document if open inside Word
+        lastCompiledTocEntries = tocEntries;
+        if (isOfficeReady) {
+          await syncInTextMarksInWord(tocEntries);
+        }
+
+        // Save & Trigger Direct Download on Mac/Windows
+        const finalBytes = await compiledDoc.save({ useObjectStreams: true });
+        const blob = new Blob([finalBytes], { type: 'application/pdf' });
+        const outputName = mainDraftFileName.replace(/\.[^/.]+$/, "") + " - Compiled Brief.pdf";
+
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = outputName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 10000);
+
+        showStatus(`🎉 <strong>Brief Compiled Successfully!</strong><br>Saved as <strong>"${escapeHtml(outputName)}"</strong> in your Downloads folder with clickable TOC and PDF bookmarks.`);
+      } catch (err) {
+        showStatus("❌ Compilation Error: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '✨ Compile & Download Court Brief PDF';
+      }
+    }
+
+    function renderMultiPageToc(pdfDoc, tocPages, tocEntries, rowsPerPage, fontBold, fontRegular, margin) {
+      const { rgb } = PDFLib;
+
+      for (let pageIdx = 0; pageIdx < tocPages.length; pageIdx++) {
+        const page = tocPages[pageIdx];
+        const { width, height } = page.getSize();
+        const startIdx = pageIdx * rowsPerPage;
+        const slice = tocEntries.slice(startIdx, startIdx + rowsPerPage);
+
+        const titleText = pageIdx === 0 ? "TABLE OF CONTENTS / INDEX" : `TABLE OF CONTENTS / INDEX (CONT. - PAGE ${pageIdx + 1})`;
+        const titleWidth = fontBold.widthOfTextAtSize(titleText, 13);
+        page.drawText(titleText, {
+          x: (width - titleWidth) / 2,
+          y: height - margin - 20,
+          size: 13,
+          font: fontBold,
+          color: rgb(0.12, 0.16, 0.3)
+        });
+
+        const tableTopY = height - margin - 52;
+        const colSlX = margin + 8;
+        const colMarkX = margin + 40;
+        const colDescX = margin + 115;
+        const colPageX = width - margin - 85;
+
+        page.drawRectangle({
+          x: margin,
+          y: tableTopY - 6,
+          width: width - 2 * margin,
+          height: 20,
+          color: rgb(0.92, 0.94, 0.98)
+        });
+
+        page.drawText("Sl.", { x: colSlX, y: tableTopY, size: 9, font: fontBold, color: rgb(0.2, 0.22, 0.32) });
+        page.drawText("Mark", { x: colMarkX, y: tableTopY, size: 9, font: fontBold, color: rgb(0.2, 0.22, 0.32) });
+        page.drawText("Document Description", { x: colDescX, y: tableTopY, size: 9, font: fontBold, color: rgb(0.2, 0.22, 0.32) });
+        page.drawText("Page Range", { x: colPageX, y: tableTopY, size: 9, font: fontBold, color: rgb(0.2, 0.22, 0.32) });
+
+        let rowY = tableTopY - 24;
+        for (let i = 0; i < slice.length; i++) {
+          const globalIdx = startIdx + i;
+          const entry = slice[i];
+          const spanText = entry.startPage === entry.endPage ? `Page ${entry.startPage}` : `Pages ${entry.startPage}–${entry.endPage}`;
+          let desc = entry.title;
+          if (desc.length > 44) desc = desc.substring(0, 41) + '...';
+
+          if (i % 2 === 1) {
+            page.drawRectangle({
+              x: margin,
+              y: rowY - 4,
+              width: width - 2 * margin,
+              height: 18,
+              color: rgb(0.98, 0.98, 0.99)
+            });
+          }
+
+          const isDraft = globalIdx === 0;
+          page.drawText(String(globalIdx + 1), { x: colSlX, y: rowY, size: 8.5, font: isDraft ? fontBold : fontRegular, color: rgb(0.3, 0.3, 0.3) });
+          page.drawText(entry.mark, { x: colMarkX, y: rowY, size: 8.5, font: fontBold, color: rgb(0.17, 0.34, 0.6) });
+          page.drawText(desc, { x: colDescX, y: rowY, size: 8.5, font: isDraft ? fontBold : fontRegular, color: rgb(0.12, 0.14, 0.2) });
+          page.drawText(spanText, { x: colPageX, y: rowY, size: 8.5, font: fontBold, color: rgb(0.1, 0.35, 0.78) });
+
+          const targetPage = pdfDoc.getPage(entry.targetPageIndex);
+          if (targetPage) {
+            createPdfLink(pdfDoc, page, [margin, rowY - 4, width - margin, rowY + 14], targetPage.ref);
+          }
+
+          rowY -= 20;
+        }
+
+        page.drawText("Tip: Click any entry above to jump to that document. Click the page number on any annexure to return to Page 1.", {
+          x: margin,
+          y: margin + 8,
+          size: 7.5,
+          font: fontRegular,
+          color: rgb(0.5, 0.5, 0.55)
+        });
+      }
+    }
+
+    function createPdfLink(pdfDoc, sourcePage, rect, targetPageRef) {
+      const { PDFName, PDFDict, PDFArray, PDFNumber } = PDFLib;
+      const context = pdfDoc.context;
+
+      const destArray = PDFArray.withContext(context);
+      destArray.push(targetPageRef);
+      destArray.push(PDFName.of('Fit'));
+
+      const actionDict = PDFDict.withContext(context);
+      actionDict.set(PDFName.of('S'), PDFName.of('GoTo'));
+      actionDict.set(PDFName.of('D'), destArray);
+
+      const linkAnnot = PDFDict.withContext(context);
+      linkAnnot.set(PDFName.of('Type'), PDFName.of('Annot'));
+      linkAnnot.set(PDFName.of('Subtype'), PDFName.of('Link'));
+
+      const rectArray = PDFArray.withContext(context);
+      rect.forEach(c => rectArray.push(PDFNumber.of(Math.round(Number.isFinite(c) ? c : 0))));
+      linkAnnot.set(PDFName.of('Rect'), rectArray);
+
+      const borderArray = PDFArray.withContext(context);
+      borderArray.push(PDFNumber.of(0), PDFNumber.of(0), PDFNumber.of(0));
+      linkAnnot.set(PDFName.of('Border'), borderArray);
+      linkAnnot.set(PDFName.of('A'), actionDict);
+
+      const annotRef = context.register(linkAnnot);
+      let annots = sourcePage.node.get(PDFName.of('Annots'));
+      if (!annots) {
+        annots = PDFArray.withContext(context);
+        sourcePage.node.set(PDFName.of('Annots'), annots);
+      }
+      annots.push(annotRef);
+    }
+
+    function buildPdfOutlines(pdfDoc, items) {
+      if (!items || items.length === 0) return;
+      const { PDFName, PDFDict, PDFArray, PDFString, PDFNumber } = PDFLib;
+      const context = pdfDoc.context;
+      const outlineRefs = [];
+
+      items.forEach(item => {
+        const targetPage = pdfDoc.getPage(item.targetPageIndex);
+        if (!targetPage) return;
+
+        // Sanitize title to ASCII-safe characters so WinAnsi PDFString encoding never fails
+        const safeTitle = String(item.title || 'Section').replace(/[^\x20-\x7E]/g, '-');
+
+        const dict = PDFDict.withContext(context);
+        dict.set(PDFName.of('Title'), PDFString.of(safeTitle));
+
+        const destArray = PDFArray.withContext(context);
+        destArray.push(targetPage.ref, PDFName.of('Fit'));
+
+        const actionDict = PDFDict.withContext(context);
+        actionDict.set(PDFName.of('S'), PDFName.of('GoTo'));
+        actionDict.set(PDFName.of('D'), destArray);
+
+        dict.set(PDFName.of('A'), actionDict);
+        outlineRefs.push({ ref: context.register(dict), dict });
+      });
+
+      if (outlineRefs.length === 0) return;
+
+      const rootDict = PDFDict.withContext(context);
+      rootDict.set(PDFName.of('Type'), PDFName.of('Outlines'));
+      rootDict.set(PDFName.of('First'), outlineRefs[0].ref);
+      rootDict.set(PDFName.of('Last'), outlineRefs[outlineRefs.length - 1].ref);
+      rootDict.set(PDFName.of('Count'), PDFNumber.of(outlineRefs.length));
+
+      const rootRef = context.register(rootDict);
+      outlineRefs.forEach((node, idx) => {
+        node.dict.set(PDFName.of('Parent'), rootRef);
+        if (idx > 0) node.dict.set(PDFName.of('Prev'), outlineRefs[idx - 1].ref);
+        if (idx < outlineRefs.length - 1) node.dict.set(PDFName.of('Next'), outlineRefs[idx + 1].ref);
+      });
+
+      pdfDoc.catalog.set(PDFName.of('Outlines'), rootRef);
+    }
+  </script>
+</body>
+</html>
